@@ -1,0 +1,65 @@
+{% load static %}
+
+<head>
+<title>Jeopardy!</title>
+<link rel="stylesheet" type="text/css" href="{% static 'play/style.css' %}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="{% static 'play/main.js' %}"></script>
+<script type="application/javascript">
+$(document).ready(function(){
+	const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");
+
+	socket.addEventListener('open', function(e) {
+		let request = {};
+		request.request = "start_final";
+		request.category = "{{ category }}";
+		request.clue = "{{ clue }}";
+		request.answer = "{{ answer }}";
+
+		socket.send(JSON.stringify(request));
+	});
+
+	socket.addEventListener('message', function(e) {
+		let json = JSON.parse(e.data);
+		
+		if (json.message == "player" && json.name != ""){
+			showPlayer(json.name, json.balance);
+		}
+	});
+
+	$(document).delegate("div.clue", "click", function(){
+		if ($(this).attr("status") == "category"){
+			$(this).find("p.clue").css("visibility", "visible");
+			$(this).attr("status", "clue");
+		} else if ($(this).attr("status") == "clue"){
+			$(this).find("p.answer").css("visibility", "visible");
+			$(this).attr("status", "done");
+			
+			let request = {}
+			request.request = "end"
+
+			socket.send(JSON.stringify(request));
+		}
+	});
+});
+</script>
+</head>
+
+<body>
+
+<div class="container">
+<div class="table_col clue" status="category" >
+
+<p class="category">{{ category }}</p>
+<p class="clue">{{ clue }}</p>
+<p class="answer">{{ answer }}</p>
+
+</div>
+
+<div class="info_col">
+	<table class="info">
+	</table>
+</div>
+</div>
+
+</body>

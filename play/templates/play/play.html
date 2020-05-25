@@ -1,0 +1,117 @@
+{% load static %}
+
+<head>
+<title>Jeopardy!</title>
+<link rel="stylesheet" type="text/css" href="{% static 'play/style.css' %}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="{% static 'play/main.js' %}"></script>
+
+<script type="application/javascript">
+$(document).ready(function(){
+	const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");
+
+	socket.addEventListener('open', function(e) {
+		let request = {};
+
+		{% if not double %}
+		request.request = "start_game";
+		{% else %}
+		request.request = "start_double";
+		{% endif %}
+
+		request.game_num = "{{ game_num }}";
+
+		socket.send(JSON.stringify(request));
+	});
+	
+	socket.addEventListener('message', function(e) {
+		let json = JSON.parse(e.data);
+
+		if (json.message == "player" && json.name != ""){
+			showPlayer(json.name, json.balance);
+		} else if (json.message == "categories"){
+			showCategories(json.categories);
+		} else if (json.message == "daily_double"){
+			showDailyDouble();
+		} else if (json.message == "buzz"){
+			playerBuzzed(json.name);
+		} else if (json.message == "unbuzz"){
+			playerUnbuzzed(json.name);
+		} else if (json.message == "question"){
+			showQuestion(json.clue, json.answer, json.cost);
+		}
+	});
+
+	$(document).delegate("div.cost", "click", function(){
+		let request = {};
+		request.request = "reveal";
+		request.row = parseInt($(this).attr("row"));
+		request.col = parseInt($(this).attr("col"));
+
+		socket.send(JSON.stringify(request));
+
+		$(this).find("p.cost").css("visibility", "hidden");
+	});
+});
+</script>
+</head>
+
+<div class="container">
+<div class="table_col">
+
+<div class="show_clue clue" id="clue_div">
+	<div>
+	<p class="cost" />
+	<p class="clue" />
+	<p class="answer" />
+	<p class="double">Daily Double</p>
+	</div>
+</div>
+
+<table id="clue_table">
+<tr>
+{% for x in '012345'|make_list %}
+	<td class="category">
+		<div class="category">
+				<p id="category_{{x}}"><strong>{{ category }}</strong></p>
+		</div>
+	</td>
+{% endfor %}
+</tr>
+{% for row in '01234'|make_list %}
+<tr>
+	{% for col in '012345'|make_list %}
+
+	<td class="clue">
+	<div class="cost clue" 
+	row={{ row }}
+	col={{ col }}>	
+
+	{% if double %}
+	<p class="cost">${% widthratio forloop.parentloop.counter 1 400 %}</p>
+	{% else %}
+	<p class="cost">${% widthratio forloop.parentloop.counter 1 200 %}</p>
+	{% endif %}
+
+	</div>
+	</td>
+	{% endfor %}
+</tr>
+{% endfor %}
+</table>
+</div>
+
+<div class="info_col">
+	<table class="info">
+	</table>
+</div>
+
+</div>
+
+
+{% if double %}
+<a href="{% url 'play' game_num %}">Jeopardy</a>
+<a href="{% url 'final' game_num %}">Final Jeopardy</a>
+{% else %}
+<a href="{% url 'double' game_num %}">Double jeopardy</a>
+{% endif %}
