@@ -27,18 +27,20 @@ $(document).ready(function(){
 	socket.addEventListener('message', function(e) {
 		let json = JSON.parse(e.data);
 
-		if (json.message == "player" && json.name != ""){
-			showPlayer(json.name, json.balance);
+		if (json.message == "state"){
+			for (name in json.players){
+				showPlayer(name, json.players[name].balance);
+			}
+
+			if (json.state == "daily_double"){
+				showDailyDouble();
+			} else if (json.state == "buzzed"){
+				playerBuzzed(json.player);
+			} else if (json.state == "buzzers_open"){
+				showQuestion(json.clue, json.answer, json.cost);
+			}
 		} else if (json.message == "categories"){
 			showCategories(json.categories);
-		} else if (json.message == "daily_double"){
-			showDailyDouble();
-		} else if (json.message == "buzz"){
-			playerBuzzed(json.name);
-		} else if (json.message == "unbuzz"){
-			playerUnbuzzed(json.name);
-		} else if (json.message == "question"){
-			showQuestion(json.clue, json.answer, json.cost);
 		}
 	});
 

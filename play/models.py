@@ -36,6 +36,7 @@ class State:
 
     def to_json():
         json_dict = {
+            'message': 'state',
             'state': name,
             'clue': clue,
             'answer': answer,

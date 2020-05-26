@@ -29,6 +29,8 @@ function showPlayer(name, balance) {
 	} else {
 		$("table.info").append('<tr id="' + _name + '_info"><td align="left">' + name + '</td><td align="right" class="balance">$' + balance.toString() + '</td></tr>');
 	}
+
+	$("table.info").find("tr#" + name.split(" ").join("_") + "_info").removeClass("buzz");
 }
 
 function showCategories(categories){
@@ -50,10 +52,6 @@ function removePlayer(name){
 
 function playerBuzzed(name){
 	$("table.info").find("tr#" + name.split(" ").join("_") + "_info").addClass("buzz");
-}
-
-function playerUnbuzzed(name){
-	$("table.info").find("tr#" + name.split(" ").join("_") + "_info").removeClass("buzz");
 }
 
 function showQuestion(clue, answer, cost){

@@ -1,15 +1,8 @@
-import json
 from channels.generic.websocket import WebsocketConsumer
 from play.models import Game
 from django.shortcuts import get_object_or_404
 import pandas as pd
 
-connections = set()
-host = None
-server = None
-can_buzz = False
-players = {}
-double = False
 game = None
 
 """
@@ -18,6 +11,21 @@ Required:
     request=[request]
 """
 
+def update_state():
+    global game
+
+    send_all(game.state.to_json())
+
+def send_all(msg):
+    global game
+
+    for name in game.state.players:
+        game.state.players[name]['conn'].send(msg)
+    if game.state.host:
+        game.state.host.send(msg)
+    if game.state.server:
+        game.state.server.send(msg)
+
 class BuzzerConsumer(WebsocketConsumer):
     name = "new player" 
     """
@@ -25,21 +33,16 @@ class BuzzerConsumer(WebsocketConsumer):
         request='buzz'
     """
     def buzz(self): 
-        global can_buzz
-        global host
-        global server
+        global game
 
         if not can_buzz:
-            self.send(json.dumps({'message': 'buzz', 'result': 'failed'}))
             return
 
-        can_buzz = False
-        self.send(json.dumps({'message': 'buzz', 'result': 'success'}))
+        game.state.can_buzz = False
+        game.state.name = "buzzed"
+        game.state.selected_player = self.name
 
-        if host:
-            host.send(json.dumps({'message': 'buzz', 'player': self.name}))
-        if server:
-            server.send(json.dumps({'message': 'buzz', 'name': self.name}))
+        update_state()
 
     """
     Required:
@@ -47,26 +50,24 @@ class BuzzerConsumer(WebsocketConsumer):
         name=[name]
     """
     def register(self, name):
-        global server
-        global players
+        global game
 
         name = name.strip()
         self.name = name
 
         balance = 0
-        if name in players:
-            balance = players[name]['balance']
-        players[name] = {'balance': balance, 'conn': self}
+        if name in game.state.players:
+            balance = game.state.players[name]['balance']
+        game.state.players[name] = {'balance': balance, 'conn': self}
 
-        show_player(name)
-        self.send(json.dumps({'message': 'unbuzz'}))
+        update_state()
 
     """
     Required:
         request='deregister'
     """
     def deregister(self):
-        global players
+        global game
         
 #        del players[self.name]
 
@@ -75,28 +76,23 @@ class BuzzerConsumer(WebsocketConsumer):
         request='wager'
         amount=[amount]
     """
-    def wager(self, amount, row, col):
-        global server
-        global can_buzz
-        global double
+    def wager(self, amount):
         global game
 
-        clue, answer = get_question(row, col)
-        show_question(clue, answer, amount)
-
-        can_buzz = True
-        self.buzz()
+        game.state.clue_shown = True
+        game.state.name = "buzzed"
        
 
+    """
+    This function is called when a connection is established
+    """
     def connect(self):
-        global connections
-
-        connections.add(self)
         self.accept()
 
+    """
+    This function is called when a message is received
+    """
     def receive(self, text_data=None):
-        global can_buzz
-
         try:
             data = json.loads(text_data or "")
         except:
@@ -109,15 +105,15 @@ class BuzzerConsumer(WebsocketConsumer):
         elif data['request'] == 'wager':
             self.wager(data['amount'], data['row'], data['col'])
 
+    """
+    This function is called when a client disconnects
+    """
     def disconnect(self, close_code):
-        global players
-        global connections
+        global game
 
-        if self in connections:
-            connections.remove(self)
+        game.state.players[self.name]['conn'] = None
 
 class HostConsumer(WebsocketConsumer):
-
     """
     Requires:
         request='response'
@@ -126,78 +122,67 @@ class HostConsumer(WebsocketConsumer):
         question=[question]
             question.value=[value]
     """
-    def playerResponse(self, name, cost, correct):
-        global players
+    def playerResponse(self, correct):
+        global game
 
 
-        if name in players:
+        if game.state.selected_player in game.state.players:
             if correct:
-                players[name]['balance'] += cost
+                game.state.players[game.state.selected_player]['balance'] += game.state.cost
             else:
-                players[name]['balance'] -= cost
+                game.state.players[game.state.selected_player]['balance'] -= game.state.cost
 
-        show_player(name)
-        self.unbuzzPlayer(name)
+        game.state.selected_player = None
+
+        # An update_state() call is made
+        # in each of the function calls below,
+        # and thus is not necessary here
+
         if correct:
             self.closeBuzzers()
         else:
             self.openBuzzers()
-
-    def unbuzzPlayer(self, name):
-        global players
-        global server
-
-        if name in players:
-            players[name]['conn'].send(json.dumps({'message': 'unbuzz'}))
-        if server:
-            server.send(json.dumps({'message': 'unbuzz', 'name': name}))
 
     """
     Requires:
         request='open'
     """
     def openBuzzers(self):
-        global can_buzz
+        global game
 
-        can_buzz = True
-        self.send(json.dumps({'message': 'open'}))
+        game.state.can_buzz = True
+        update_state()
 
     """
     Requires:
         request='close'
     """
     def closeBuzzers(self):
-        global can_buzz
+        global game
 
-        can_buzz = False
-        self.send(json.dumps({'message': 'close'}))
+        game.state.can_buzz = False
+        update_state()
 
-    def playerChosen(self, name, row, col):
-        global players
+    def playerChosen(self, name):
+        global game
 
         if name in players:
-            players[name]['conn'].send(json.dumps({'message': 'wager', 'row': row, 'col': col}))
+            game.state.selected_player = name
+            game.state.name = "wager"
+            update_state()
 
     def connect(self):
-        global host
-        global connections
+        global game
 
-        host = self
-        connections.add(self)
+        game.state.host = self
         self.accept()
-        self.send(json.dumps({'message': 'close'}))
 
     def disconnect(self, close_code):
-        global host
-        global connections
+        global game
 
-        host = None
-        if self in connections:
-            connections.remove(self)
+        game.state.host = None
 
     def receive(self, text_data=None):
-        global connections
-        global can_buzz
 
         try:
             data = json.loads(text_data)
@@ -209,33 +194,26 @@ class HostConsumer(WebsocketConsumer):
         if data['request'] == 'close':
             self.closeBuzzers()
         if data['request'] == 'response':
-            self.playerResponse(data['name'], data['cost'], data['correct'])
+            self.playerResponse(data['correct'])
         if data['request'] == 'player_choice':
-            self.playerChosen(data['name'], data['row'], data['col'])
+            self.playerChosen(data['name'])
 
 class ServerConsumer(WebsocketConsumer):
     def connect(self):
-        global server
-        global players
+        global game
 
-        server = self
+        game.state.server = self
         self.accept()
 
-        for name in players:
-            show_player(name)
+        self.send(game.state.to_json())
 
     def receive(self, text_data=None):
-        global connections
-        global host
-        global server
-        global players
+        global game
 
         try:
             data = json.loads(text_data)
         except:
             return
-
-        print(text_data)
 
         if data['request'] == 'start_game':
             begin_game(data['game_num'])
@@ -246,105 +224,78 @@ class ServerConsumer(WebsocketConsumer):
         elif data['request'] == 'reveal':
             reveal(data['row'], data['col'])
         elif data['request'] == 'end':
-            for connection in connections:
-                connection.send(json.dumps({'message': 'end'}))
-            connections = set()
             host = None
             server = None
             players = {}
             
 
 def begin_game(game_id):
-    global connections
-    global players
-    global server
     global game
-    global double
 
-    for conn in connections:
-        conn.close()
-
-    connections = set()
+    for name in game.state.players:
+        game.state.players[name]['conn'].close()
 
     players = {}
     game = get_object_or_404(Game, pk=game_id)
 
-    if server:
-        print(game.jeopardy_questions.columns.tolist())
-        server.send(json.dumps({'message': 'categories', 'categories': game.jeopardy_questions.columns.tolist()}))
-    double = False
+    if game.state.server:
+        game.state.server.send(json.dumps({'message': 'categories', 'categories': game.jeopardy_questions.columns.tolist()}))
+
+    game.state.double = False
 
 def begin_double(game_id):
     global game
-    global server
-    global double
 
     game = get_object_or_404(Game, pk=game_id)
-    if server:
-        server.send(json.dumps({'message': 'categories', 'categories': game.double_jeopardy_questions.columns.tolist()}))
-    double = True
+    if game.state.server:
+        game.state.server.send(json.dumps({'message': 'categories', 'categories': game.double_jeopardy_questions.columns.tolist()}))
+    game.state.double = True
 
 def begin_final(category, clue, answer):
-    global players
     global game
-    global double
 
-    double = False
+    game.state.double = False
     game = Game()
     game.jeopardy_questions = pd.DataFrame([clue,])
     game.jeopardy_answers = pd.DataFrame([answer,])
-    for name in players:
-        players[name]['conn'].send(json.dumps({'message': 'wager', 'row': 0, 'col': 0}))
     
 def reveal(row, col):
-    global double
     global game
 
     clue, answer = get_question(row, col)
+    game.state.clue = clue
+    game.state.answer = answer
+    game.state.name = "question"
+
     if 'Double Jeopardy:' in clue:
         show_daily_double(row, col)
-    elif double:
-        show_question(clue, answer, cost=(row+1)*400)
+    elif game.state.double:
+        game.state.cost = cost=(row+1)*400
     else:
-        show_question(clue, answer, cost=(row+1)*200)
+        game.state.cost = cost=(row+1)*200
+
+    update_state()
 
 def get_question(row, col):
-    if not double:
+    global game
+
+    if not game.state.double:
         clue = game.jeopardy_questions.values.tolist()[row][col]
         answer = game.jeopardy_answers.values.tolist()[row][col]
         return clue, answer
-    elif double:
+    elif game.state.double:
         clue = game.double_jeopardy_questions.values.tolist()[row][col]
         answer = game.double_jeopardy_answers.values.tolist()[row][col]
         return clue, answer
 
-def show_question(clue, answer, cost):
-    global connections
-    global host
-    global server
-
-    for connection in connections:
-        connection.send(json.dumps({'message': 'question', 'clue': clue, 'answer': answer, 'cost': cost}))
-    if host:
-        host.send(json.dumps({'message': 'question', 'clue': clue, 'answer': answer, 'cost': cost}))
-    if server:
-        server.send(json.dumps({'message': 'question', 'clue': clue, 'answer': answer, 'cost': cost}))
-
 def show_daily_double(row, col):
-    global host
-    global players
-    global server
+    global game
 
-    if host:
-        host.send(json.dumps({'message': 'daily_double', 'players': [name for name in players], 'row': row, 'col': col}))
+    game.state.name = "daily_double"
 
-    if server:
-        server.send(json.dumps({'message': 'daily_double'}))
+    if game.state.host:
+        game.state.host.send(json.dumps({'message': 'daily_double', 'players': [name for name in players], 'row': row, 'col': col}))
 
-def show_player(name):
-    global server
-    global players
+    if game.state.server:
+        game.state.server.send(json.dumps({'message': 'daily_double'}))
 
-    if server and name in players:
-        balance = players[name]['balance']
-        server.send(json.dumps({'message': 'player', 'name': name, 'balance': balance}))
