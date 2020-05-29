@@ -1,21 +1,9 @@
 import json
+from django.db import models
+from picklefield import fields
 
-class Game(models.Model):
-    num = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=150)
-    played = models.BooleanField(default=False)
-    jeopardy_questions = fields.PickledObjectField()
-    jeopardy_answers = fields.PickledObjectField()
-    double_jeopardy_questions = fields.PickledObjectField()
-    double_jeopardy_answers = fields.PickledObjectField()
-    final_category = models.CharField(max_length=250)
-    final_clue = models.CharField(max_length=500)
-    final_answer = models.CharField(max_length=500)
-    state = State()
-
-
-class State:
-    name = "new"
+class State():
+    name = "question"
     clue = ""
     answer = ""
     cost = 0
@@ -34,16 +22,32 @@ class State:
     can_buzz = False
     double = False
 
-    def to_json():
+    def to_json(self):
         json_dict = {
             'message': 'state',
-            'state': name,
-            'clue': clue,
-            'answer': answer,
-            'clue_shown': clue_shown,
-            'answer_shown': answer_shown
-            'players': players
-            'player': selected_player
+            'state': self.name,
+            'clue': self.clue,
+            'answer': self.answer,
+            'cost': self.cost,
+            'clue_shown': self.clue_shown,
+            'answer_shown': self.answer_shown,
+            'players': {name:self.players[name]['balance'] for name in self.players},
+            'player': self.selected_player,
+            'buzzers_open': self.can_buzz
         }
 
         return json.dumps(json_dict)
+
+
+class Game(models.Model):
+    num = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=150)
+    played = models.BooleanField(default=False)
+    jeopardy_questions = fields.PickledObjectField()
+    jeopardy_answers = fields.PickledObjectField()
+    double_jeopardy_questions = fields.PickledObjectField()
+    double_jeopardy_answers = fields.PickledObjectField()
+    final_category = models.CharField(max_length=250)
+    final_clue = models.CharField(max_length=500)
+    final_answer = models.CharField(max_length=500)
+    state = State()

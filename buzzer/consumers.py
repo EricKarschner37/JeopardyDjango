@@ -2,6 +2,7 @@ from channels.generic.websocket import WebsocketConsumer
 from play.models import Game
 from django.shortcuts import get_object_or_404
 import pandas as pd
+import json
 
 game = None
 
@@ -20,11 +21,15 @@ def send_all(msg):
     global game
 
     for name in game.state.players:
-        game.state.players[name]['conn'].send(msg)
+        if game.state.players[name]['conn']:
+            game.state.players[name]['conn'].send(msg)
     if game.state.host:
         game.state.host.send(msg)
     if game.state.server:
         game.state.server.send(msg)
+        print(game.state.name)
+        print(game.state.clue)
+        print(game.state.answer)
 
 class BuzzerConsumer(WebsocketConsumer):
     name = "new player" 
@@ -35,7 +40,7 @@ class BuzzerConsumer(WebsocketConsumer):
     def buzz(self): 
         global game
 
-        if not can_buzz:
+        if not game.state.can_buzz:
             return
 
         game.state.can_buzz = False
@@ -139,8 +144,10 @@ class HostConsumer(WebsocketConsumer):
         # and thus is not necessary here
 
         if correct:
+            game.state.name = "question"
             self.closeBuzzers()
         else:
+            game.state.name = "question"
             self.openBuzzers()
 
     """
@@ -176,6 +183,7 @@ class HostConsumer(WebsocketConsumer):
 
         game.state.host = self
         self.accept()
+        self.send(game.state.to_json())
 
     def disconnect(self, close_code):
         global game
@@ -202,10 +210,10 @@ class ServerConsumer(WebsocketConsumer):
     def connect(self):
         global game
 
-        game.state.server = self
         self.accept()
 
-        self.send(game.state.to_json())
+        if game:
+            game.state.server = self
 
     def receive(self, text_data=None):
         global game
@@ -216,7 +224,7 @@ class ServerConsumer(WebsocketConsumer):
             return
 
         if data['request'] == 'start_game':
-            begin_game(data['game_num'])
+            begin_game(data['game_num'], self)
         elif data['request'] == 'start_double':
             begin_double(data['game_num'])
         elif data['request'] == 'start_final':
@@ -224,22 +232,27 @@ class ServerConsumer(WebsocketConsumer):
         elif data['request'] == 'reveal':
             reveal(data['row'], data['col'])
         elif data['request'] == 'end':
-            host = None
-            server = None
-            players = {}
+            game.state.host = None
+            game.state.server = None
+            game.state.players = {}
             
 
-def begin_game(game_id):
+def begin_game(game_id, server):
     global game
+
+    game = get_object_or_404(Game, pk=game_id)
+    game.state.server = server
 
     for name in game.state.players:
         game.state.players[name]['conn'].close()
 
-    players = {}
-    game = get_object_or_404(Game, pk=game_id)
+    game.state.players = {}
+
+    print(game.jeopardy_questions.columns.tolist())
 
     if game.state.server:
         game.state.server.send(json.dumps({'message': 'categories', 'categories': game.jeopardy_questions.columns.tolist()}))
+        print(game.jeopardy_questions.columns.tolist())
 
     game.state.double = False
 
@@ -249,6 +262,7 @@ def begin_double(game_id):
     game = get_object_or_404(Game, pk=game_id)
     if game.state.server:
         game.state.server.send(json.dumps({'message': 'categories', 'categories': game.double_jeopardy_questions.columns.tolist()}))
+        game.state.server.send(game.state.to_json())
     game.state.double = True
 
 def begin_final(category, clue, answer):
@@ -274,6 +288,7 @@ def reveal(row, col):
     else:
         game.state.cost = cost=(row+1)*200
 
+    print(game.state)
     update_state()
 
 def get_question(row, col):
