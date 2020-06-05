@@ -134,7 +134,7 @@ class HostConsumer(WebsocketConsumer):
             if correct:
                 players[name]['balance'] += cost
             else:
-                players[name]['balance'] -= cost
+                players[name]['balance'] = max(players[name]['balance'] - cost, 0)
 
         show_player(name)
         self.unbuzzPlayer(name)
