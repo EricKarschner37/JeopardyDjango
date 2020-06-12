@@ -3,7 +3,7 @@ from django.db import models
 from picklefield import fields
 
 class State():
-    name = "question"
+    name = "idle"
     clue = ""
     answer = ""
     cost = 0
@@ -29,8 +29,6 @@ class State():
             'clue': self.clue,
             'answer': self.answer,
             'cost': self.cost,
-            'clue_shown': self.clue_shown,
-            'answer_shown': self.answer_shown,
             'players': {name:self.players[name]['balance'] for name in self.players},
             'player': self.selected_player,
             'buzzers_open': self.can_buzz

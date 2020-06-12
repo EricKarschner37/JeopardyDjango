@@ -5,58 +5,22 @@
 <link rel="stylesheet" type="text/css" href="{% static 'play/style.css' %}">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <script src="{% static 'play/main.js' %}"></script>
-
-<script type="application/javascript">
-$(document).ready(function(){
-	const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");
-
+<script type="text/javascript">
 	socket.addEventListener('open', function(e) {
 		let request = {};
 
-		{% if not double %}
-		request.request = "start_game";
+		{% if double %}
+			request.request = "start_double";
 		{% else %}
-		request.request = "start_double";
+			request.request = "start_game";
 		{% endif %}
 
 		request.game_num = "{{ game_num }}";
 
 		socket.send(JSON.stringify(request));
 	});
-	
-	socket.addEventListener('message', function(e) {
-		let json = JSON.parse(e.data);
-		alert(e.data);
-
-		if (json.message == "state"){
-			for (let [name, balance] of Object.entries(json.players)){
-				showPlayer(name, balance);
-			}
-
-			if (json.state == "daily_double"){
-				showDailyDouble();
-			} else if (json.state == "buzzed"){
-				playerBuzzed(json.player);
-			} else if (json.state == "question"){
-				showQuestion(json.clue, json.answer, json.cost);
-			}
-		} else if (json.message == "categories"){
-			showCategories(json.categories);
-		}
-	});
-
-	$(document).delegate("div.cost", "click", function(){
-		let request = {};
-		request.request = "reveal";
-		request.row = parseInt($(this).attr("row"));
-		request.col = parseInt($(this).attr("col"));
-
-		socket.send(JSON.stringify(request));
-
-		$(this).find("p.cost").css("visibility", "hidden");
-	});
-});
 </script>
+
 </head>
 
 <div class="container">

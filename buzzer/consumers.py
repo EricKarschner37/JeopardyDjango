@@ -20,9 +20,10 @@ def update_state():
 def send_all(msg):
     global game
 
-    for name in game.state.players:
-        if game.state.players[name]['conn']:
-            game.state.players[name]['conn'].send(msg)
+    players = game.state.players.copy()
+    for name in players:
+        if players[name]['conn']:
+            players[name]['conn'].send(msg)
     if game.state.host:
         game.state.host.send(msg)
     if game.state.server:
@@ -56,6 +57,9 @@ class BuzzerConsumer(WebsocketConsumer):
     """
     def register(self, name):
         global game
+
+        if not game:
+            return
 
         name = name.strip()
         self.name = name
@@ -116,7 +120,8 @@ class BuzzerConsumer(WebsocketConsumer):
     def disconnect(self, close_code):
         global game
 
-        game.state.players[self.name]['conn'] = None
+        if game and self.name in game.state.players:
+            game.state.players[self.name]['conn'] = None
 
 class HostConsumer(WebsocketConsumer):
     """
@@ -181,14 +186,16 @@ class HostConsumer(WebsocketConsumer):
     def connect(self):
         global game
 
-        game.state.host = self
-        self.accept()
-        self.send(game.state.to_json())
+        if game and game.state.host is None:
+            game.state.host = self
+            self.accept()
+            self.send(game.state.to_json())
 
     def disconnect(self, close_code):
         global game
 
-        game.state.host = None
+        if game:
+            game.state.host = None
 
     def receive(self, text_data=None):
 
@@ -231,6 +238,12 @@ class ServerConsumer(WebsocketConsumer):
             begin_final(data['category'], data['clue'], data['answer'])
         elif data['request'] == 'reveal':
             reveal(data['row'], data['col'])
+        elif data['request'] == 'answer':
+            game.state.name = 'answer'
+            update_state()
+        elif data['request'] == 'idle':
+            game.state.name = 'idle'
+            update_state()
         elif data['request'] == 'end':
             game.state.host = None
             game.state.server = None
@@ -244,7 +257,8 @@ def begin_game(game_id, server):
     game.state.server = server
 
     for name in game.state.players:
-        game.state.players[name]['conn'].close()
+        if game.state.players[name]['conn']:
+            game.state.players[name]['conn'].close()
 
     game.state.players = {}
 
