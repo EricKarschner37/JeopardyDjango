@@ -88,8 +88,11 @@ class BuzzerConsumer(WebsocketConsumer):
     def wager(self, amount):
         global game
 
-        game.state.clue_shown = True
-        game.state.name = "buzzed"
+        game.state.name = "question"
+        game.state.cost = amount
+        update_state()
+        game.state.can_buzz = True
+        self.buzz()
        
 
     """
@@ -112,7 +115,7 @@ class BuzzerConsumer(WebsocketConsumer):
         elif data['request'] == 'register':
             self.register(data['name'])
         elif data['request'] == 'wager':
-            self.wager(data['amount'], data['row'], data['col'])
+            self.wager(data['amount'])
 
     """
     This function is called when a client disconnects
@@ -178,10 +181,8 @@ class HostConsumer(WebsocketConsumer):
     def playerChosen(self, name):
         global game
 
-        if name in players:
-            game.state.selected_player = name
-            game.state.name = "wager"
-            update_state()
+        game.state.selected_player = name
+        update_state()
 
     def connect(self):
         global game
@@ -238,7 +239,7 @@ class ServerConsumer(WebsocketConsumer):
             begin_final(data['category'], data['clue'], data['answer'])
         elif data['request'] == 'reveal':
             reveal(data['row'], data['col'])
-        elif data['request'] == 'answer':
+        elif data['request'] == 'answer' and game.state.name != 'buzzed':
             game.state.name = 'answer'
             update_state()
         elif data['request'] == 'idle':
@@ -283,7 +284,13 @@ def begin_final(category, clue, answer):
     global game
 
     game.state.double = False
+    players = game.state.players.copy()
+    server = game.state.server
     game = Game()
+    game.state.players = players
+    game.state.server = server
+
+    server.send(game.state.to_json())
     game.jeopardy_questions = pd.DataFrame([clue,])
     game.jeopardy_answers = pd.DataFrame([answer,])
     
@@ -294,6 +301,7 @@ def reveal(row, col):
     game.state.clue = clue
     game.state.answer = answer
     game.state.name = "question"
+    game.state.can_buzz = False
 
     if 'Double Jeopardy:' in clue:
         show_daily_double(row, col)
@@ -302,7 +310,6 @@ def reveal(row, col):
     else:
         game.state.cost = cost=(row+1)*200
 
-    print(game.state)
     update_state()
 
 def get_question(row, col):
@@ -323,7 +330,7 @@ def show_daily_double(row, col):
     game.state.name = "daily_double"
 
     if game.state.host:
-        game.state.host.send(json.dumps({'message': 'daily_double', 'players': [name for name in players], 'row': row, 'col': col}))
+        game.state.host.send(json.dumps({'message': 'daily_double', 'players': [name for name in game.state.players], 'row': row, 'col': col}))
 
     if game.state.server:
         game.state.server.send(json.dumps({'message': 'daily_double'}))
