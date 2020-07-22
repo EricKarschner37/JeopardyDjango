@@ -19,14 +19,6 @@ $(document).ready(function(){
 		socket.send(JSON.stringify(request));
 	});
 
-	socket.addEventListener('message', function(e) {
-		let json = JSON.parse(e.data);
-		
-		if (json.message == "player" && json.name != ""){
-			showPlayer(json.name, json.balance);
-		}
-	});
-
 	$(document).delegate("div.clue", "click", function(){
 		if ($(this).attr("status") == "category"){
 			$(this).find("p.clue").css("visibility", "visible");

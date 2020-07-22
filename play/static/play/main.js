@@ -1,3 +1,5 @@
+const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");
+
 $(document).ready(function(){
     $("div#clue_div").css("height", $("table#clue_table").css("height"));
     $("div#clue_div").css("width", $("table#clue_table").css("width"));
@@ -6,6 +8,10 @@ $(document).ready(function(){
         if ($(this).attr("status") == "clue"){
             $(this).attr("status", "answer");
             $(this).find("p.answer").css("visibility", "visible");
+
+			let request = {};
+			request.request = "answer";
+			socket.send(JSON.stringify(request));
         } else if ($(this).attr("status") == "double"){
             $(this).attr("status", "clue");
             $(this).find("p.clue").css("visibility", "visible");
@@ -17,8 +23,44 @@ $(document).ready(function(){
             $(this).attr("status", "done");
             $(this).css("display", "none");
             $("table#clue_table").css("display", "block");
+
+			let request = {};
+			request.request = "idle";
+			socket.send(JSON.stringify(request));
         }
     });
+
+	
+	socket.addEventListener('message', function(e) {
+		let json = JSON.parse(e.data);
+
+		if (json.message == "state"){
+			for (let [name, balance] of Object.entries(json.players)){
+				showPlayer(name, balance);
+			}
+
+			if (json.state == "daily_double"){
+				showDailyDouble();
+			} else if (json.state == "buzzed"){
+				playerBuzzed(json.player);
+			} else if (json.state == "question"){
+				showQuestion(json.clue, json.answer, json.cost);
+			}
+		} else if (json.message == "categories"){
+			showCategories(json.categories);
+		}
+	});
+
+	$(document).delegate("div.cost", "click", function(){
+		let request = {};
+		request.request = "reveal";
+		request.row = parseInt($(this).attr("row"));
+		request.col = parseInt($(this).attr("col"));
+
+		socket.send(JSON.stringify(request));
+
+		$(this).find("p.cost").css("visibility", "hidden");
+	});
 });
 
 function showPlayer(name, balance) {
@@ -29,6 +71,8 @@ function showPlayer(name, balance) {
 	} else {
 		$("table.info").append('<tr id="' + _name + '_info"><td align="left">' + name + '</td><td align="right" class="balance">$' + balance.toString() + '</td></tr>');
 	}
+
+	$("table.info").find("tr#" + name.split(" ").join("_") + "_info").removeClass("buzz");
 }
 
 function showCategories(categories){
@@ -50,10 +94,6 @@ function removePlayer(name){
 
 function playerBuzzed(name){
 	$("table.info").find("tr#" + name.split(" ").join("_") + "_info").addClass("buzz");
-}
-
-function playerUnbuzzed(name){
-	$("table.info").find("tr#" + name.split(" ").join("_") + "_info").removeClass("buzz");
 }
 
 function showQuestion(clue, answer, cost){
