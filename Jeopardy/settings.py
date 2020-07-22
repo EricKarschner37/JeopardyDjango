@@ -124,7 +124,7 @@ USE_TZ = True
 SITE_ROOT = os.path.dirname(os.path.join(BASE_DIR, 'static'))
 STATIC_URL = '/static/'
 
-STATIC_ROOT = '/opt/jeopardy_static'
+STATIC_ROOT = '/opt/Jeopardy/static'
 
 STATICFILES_DIRES = (
     os.path.join(BASE_DIR, "static"),

@@ -1,0 +1,11 @@
+--2020-05-22 23:41:43--  https://images-na.ssl-images-amazon.com/images/I/31M2GpmH5VL._SY355_.png
+Resolving images-na.ssl-images-amazon.com (images-na.ssl-images-amazon.com)... 199.232.65.16, 2a04:4e42:50::272
+Connecting to images-na.ssl-images-amazon.com (images-na.ssl-images-amazon.com)|199.232.65.16|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 7577 (7.4K) [image/jpeg]
+Saving to: ‘31M2GpmH5VL._SY355_.png’
+
+     0K .......                                               100% 61.2M=0s
+
+2020-05-22 23:41:44 (61.2 MB/s) - ‘31M2GpmH5VL._SY355_.png’ saved [7577/7577]
+
