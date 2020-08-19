@@ -57,6 +57,9 @@ p {
 
 p.cost{
 	color: yellow;
+	margin: auto;
+	text-align: center;
+	background-color: white;
 }
 
 td.clue, td.category {

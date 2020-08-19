@@ -1,9 +1,12 @@
 {% load static %}
 
+<html>
 <head>
 <title>Jeopardy!</title>
 <link rel="stylesheet" type="text/css" href="{% static 'play/style.css' %}">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
 <script src="{% static 'play/main.js' %}"></script>
 <script type="text/javascript">
 	socket.addEventListener('open', function(e) {
@@ -22,20 +25,22 @@
 </script>
 
 </head>
+<body>
 
 <div class="container">
 <div class="table_col">
 
-<div class="show_clue clue" id="clue_div">
-	<div>
+<div class="clue" id="clue_div">
 	<p class="cost" />
 	<p class="clue" />
 	<p class="answer" />
 	<p class="double">Daily Double</p>
-	</div>
 </div>
 
-<table id="clue_table">
+<div id="clue_table_container">
+</div>
+
+<!-- <table id="clue_table">
 <tr>
 {% for x in '012345'|make_list %}
 	<td class="category">
@@ -50,9 +55,9 @@
 	{% for col in '012345'|make_list %}
 
 	<td class="clue">
-	<div class="cost clue" 
+	<div class="cost clue"
 	row={{ row }}
-	col={{ col }}>	
+	col={{ col }}>
 
 	{% if double %}
 	<p class="cost">${% widthratio forloop.parentloop.counter 1 400 %}</p>
@@ -65,12 +70,10 @@
 	{% endfor %}
 </tr>
 {% endfor %}
-</table>
+</table> -->
 </div>
 
 <div class="info_col">
-	<table class="info">
-	</table>
 </div>
 
 </div>
@@ -82,3 +85,10 @@
 {% else %}
 <a href="{% url 'double' game_num %}">Double jeopardy</a>
 {% endif %}
+
+
+<script src="{% static 'play/components.js' %}"></script>
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -12,10 +12,12 @@ Required:
     request=[request]
 """
 
+
 def update_state():
     global game
 
     send_all(game.state.to_json())
+
 
 def send_all(msg):
     global game
@@ -32,13 +34,15 @@ def send_all(msg):
         print(game.state.clue)
         print(game.state.answer)
 
+
 class BuzzerConsumer(WebsocketConsumer):
-    name = "new player" 
+    name = "new player"
     """
     Required:
         request='buzz'
     """
-    def buzz(self): 
+
+    def buzz(self):
         global game
 
         if not game.state.can_buzz:
@@ -55,6 +59,7 @@ class BuzzerConsumer(WebsocketConsumer):
         request='register'
         name=[name]
     """
+
     def register(self, name):
         global game
 
@@ -75,16 +80,18 @@ class BuzzerConsumer(WebsocketConsumer):
     Required:
         request='deregister'
     """
+
     def deregister(self):
         global game
-        
-#        del players[self.name]
+
+    #        del players[self.name]
 
     """
     Required:
         request='wager'
         amount=[amount]
     """
+
     def wager(self, amount):
         global game
 
@@ -93,17 +100,18 @@ class BuzzerConsumer(WebsocketConsumer):
         update_state()
         game.state.can_buzz = True
         self.buzz()
-       
 
     """
     This function is called when a connection is established
     """
+
     def connect(self):
         self.accept()
 
     """
     This function is called when a message is received
     """
+
     def receive(self, text_data=None):
         try:
             data = json.loads(text_data or "")
@@ -120,11 +128,13 @@ class BuzzerConsumer(WebsocketConsumer):
     """
     This function is called when a client disconnects
     """
+
     def disconnect(self, close_code):
         global game
 
         if game and self.name in game.state.players:
             game.state.players[self.name]['conn'] = None
+
 
 class HostConsumer(WebsocketConsumer):
     """
@@ -135,9 +145,9 @@ class HostConsumer(WebsocketConsumer):
         question=[question]
             question.value=[value]
     """
+
     def playerResponse(self, correct):
         global game
-
 
         if game.state.selected_player in game.state.players:
             if correct:
@@ -162,6 +172,7 @@ class HostConsumer(WebsocketConsumer):
     Requires:
         request='open'
     """
+
     def openBuzzers(self):
         global game
 
@@ -172,6 +183,7 @@ class HostConsumer(WebsocketConsumer):
     Requires:
         request='close'
     """
+
     def closeBuzzers(self):
         global game
 
@@ -214,6 +226,7 @@ class HostConsumer(WebsocketConsumer):
         if data['request'] == 'player_choice':
             self.playerChosen(data['name'])
 
+
 class ServerConsumer(WebsocketConsumer):
     def connect(self):
         global game
@@ -249,7 +262,7 @@ class ServerConsumer(WebsocketConsumer):
             game.state.host = None
             game.state.server = None
             game.state.players = {}
-            
+
 
 def begin_game(game_id, server):
     global game
@@ -266,19 +279,23 @@ def begin_game(game_id, server):
     print(game.jeopardy_questions.columns.tolist())
 
     if game.state.server:
-        game.state.server.send(json.dumps({'message': 'categories', 'categories': game.jeopardy_questions.columns.tolist()}))
+        game.state.server.send(
+            json.dumps({'message': 'categories', 'categories': game.jeopardy_questions.columns.tolist()}))
         print(game.jeopardy_questions.columns.tolist())
 
     game.state.double = False
+
 
 def begin_double(game_id):
     global game
 
     game = get_object_or_404(Game, pk=game_id)
     if game.state.server:
-        game.state.server.send(json.dumps({'message': 'categories', 'categories': game.double_jeopardy_questions.columns.tolist()}))
+        game.state.server.send(
+            json.dumps({'message': 'categories', 'categories': game.double_jeopardy_questions.columns.tolist()}))
         game.state.server.send(game.state.to_json())
     game.state.double = True
+
 
 def begin_final(category, clue, answer):
     global game
@@ -291,9 +308,10 @@ def begin_final(category, clue, answer):
     game.state.server = server
 
     server.send(game.state.to_json())
-    game.jeopardy_questions = pd.DataFrame([clue,])
-    game.jeopardy_answers = pd.DataFrame([answer,])
-    
+    game.jeopardy_questions = pd.DataFrame([clue, ])
+    game.jeopardy_answers = pd.DataFrame([answer, ])
+
+
 def reveal(row, col):
     global game
 
@@ -306,11 +324,12 @@ def reveal(row, col):
     if 'Double Jeopardy:' in clue:
         show_daily_double(row, col)
     elif game.state.double:
-        game.state.cost = cost=(row+1)*400
+        game.state.cost = (row + 1) * 400
     else:
-        game.state.cost = cost=(row+1)*200
+        game.state.cost = (row + 1) * 200
 
     update_state()
+
 
 def get_question(row, col):
     global game
@@ -324,14 +343,15 @@ def get_question(row, col):
         answer = game.double_jeopardy_answers.values.tolist()[row][col]
         return clue, answer
 
+
 def show_daily_double(row, col):
     global game
 
     game.state.name = "daily_double"
 
     if game.state.host:
-        game.state.host.send(json.dumps({'message': 'daily_double', 'players': [name for name in game.state.players], 'row': row, 'col': col}))
+        game.state.host.send(json.dumps(
+            {'message': 'daily_double', 'players': [name for name in game.state.players], 'row': row, 'col': col}))
 
     if game.state.server:
         game.state.server.send(json.dumps({'message': 'daily_double'}))
-

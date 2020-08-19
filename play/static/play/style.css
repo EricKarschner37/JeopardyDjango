@@ -12,6 +12,8 @@ p.double, p.answer, p.clue{
 
 table#clue_table {
 	margin: 0;
+	height: 75%;
+	width: 90%;
 }
 
 table.info {
@@ -43,8 +45,8 @@ div.table_col {
 
 div#clue_div{
 	display: none;
-	height: 100%;
-	width: 100%;
+	height: 75%;
+	width: 90%;
 	align-items: center;
 	justify-content: center;
 }
@@ -57,9 +59,11 @@ p {
 
 p.cost{
 	color: yellow;
+	margin: auto;
+	text-align: center;
 }
 
-td.clue, td.category {
+td.clue, th.category {
 	height: 100px;
 	width: 250px;
 	background-color: #060CE9;

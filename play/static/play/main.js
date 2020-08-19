@@ -1,4 +1,4 @@
-const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");
+const socket = new WebSocket("ws://" + window.location.host + "/ws/buzzer/server/");
 
 $(document).ready(function(){
     $("div#clue_div").css("height", $("table#clue_table").css("height"));
@@ -34,34 +34,39 @@ $(document).ready(function(){
 	socket.addEventListener('message', function(e) {
 		let json = JSON.parse(e.data);
 
-		if (json.message == "state"){
+		if (json.message === "state"){
 			for (let [name, balance] of Object.entries(json.players)){
 				showPlayer(name, balance);
 			}
 
-			if (json.state == "daily_double"){
+			if (json.state === "daily_double"){
 				showDailyDouble();
-			} else if (json.state == "buzzed"){
+			} else if (json.state === "buzzed"){
 				playerBuzzed(json.player);
-			} else if (json.state == "question"){
+			} else if (json.state === "question"){
 				showQuestion(json.clue, json.answer, json.cost);
 			}
-		} else if (json.message == "categories"){
-			showCategories(json.categories);
+		} else if (json.message === "categories"){
+			ReactDOM.render(
+				React.createElement(
+					ClueBoard,
+					{categories: json.categories}
+				),
+				document.getElementById("clue_table_container")
+			);
+			console.log("Render completed")
 		}
 	});
-
-	$(document).delegate("div.cost", "click", function(){
-		let request = {};
-		request.request = "reveal";
-		request.row = parseInt($(this).attr("row"));
-		request.col = parseInt($(this).attr("col"));
-
-		socket.send(JSON.stringify(request));
-
-		$(this).find("p.cost").css("visibility", "hidden");
-	});
 });
+
+function revealClue(row, col){
+	let request = {};
+	request.request = "reveal";
+	request.row = row;
+	request.col = col;
+
+	socket.send(JSON.stringify(request))
+}
 
 function showPlayer(name, balance) {
 	_name = name.split(" ").join("_");
