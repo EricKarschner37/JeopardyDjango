@@ -2,9 +2,9 @@
 
 <head>
 <title>Jeopardy!</title>
-<link rel="stylesheet" type="text/css" href="{% static 'play/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'host/style.css' %}">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-<script src="{% static 'play/main.js' %}"></script>
+<script src="{% static 'host/main.js' %}"></script>
 <script type="application/javascript">
 $(document).ready(function(){
 	const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");

@@ -3,11 +3,11 @@
 <html>
 <head>
 <title>Jeopardy!</title>
-<link rel="stylesheet" type="text/css" href="{% static 'play/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'host/style.css' %}">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-<script src="{% static 'play/main.js' %}"></script>
+<script src="{% static 'host/main.js' %}"></script>
 <script type="text/javascript">
 	socket.addEventListener('open', function(e) {
 		let request = {};
@@ -80,14 +80,14 @@
 
 
 {% if double %}
-<a href="{% url 'play' game_num %}">Jeopardy</a>
+<a href="{% url 'host' game_num %}">Jeopardy</a>
 <a href="{% url 'final' game_num %}">Final Jeopardy</a>
 {% else %}
 <a href="{% url 'double' game_num %}">Double jeopardy</a>
 {% endif %}
 
 
-<script src="{% static 'play/components.js' %}"></script>
+<script src="{% static 'host/components.js' %}"></script>
 <script type="text/javascript">
 </script>
 </body>

@@ -1,5 +1,5 @@
 from channels.generic.websocket import WebsocketConsumer
-from play.models import Game
+from host.models import Game
 from django.shortcuts import get_object_or_404
 import pandas as pd
 import json
@@ -69,6 +69,8 @@ class BuzzerConsumer(WebsocketConsumer):
         name = name.strip()
         self.name = name
 
+        self.send(json.dumps({'message': 'register success'}))
+
         balance = 0
         if name in game.state.players:
             balance = game.state.players[name]['balance']
@@ -117,6 +119,8 @@ class BuzzerConsumer(WebsocketConsumer):
             data = json.loads(text_data or "")
         except:
             return
+
+        print(data)
 
         if data['request'] == 'buzz':
             self.buzz()

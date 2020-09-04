@@ -7,7 +7,7 @@ import picklefield.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('play', '0005_game_played'),
+        ('host', '0005_game_played'),
     ]
 
     operations = [

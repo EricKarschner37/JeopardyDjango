@@ -25,7 +25,7 @@ SECRET_KEY = 'r=27xckuamahj_-(-)g%(5x9)jdmsb7aml&)155u51buigz9j*'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['jeopardy.karschner.studio', '10.0.0.37', 'localhost']
+ALLOWED_HOSTS = ['jeopardy.karschner.studio', '10.0.0.37', 'localhost', '129.21.117.86']
 
 
 # Application definition
@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['jeopardy.karschner.studio', '10.0.0.37', 'localhost']
 INSTALLED_APPS = [
     'buzzer',
     'get.apps.GetConfig',
+    'host.apps.HostConfig',
     'play.apps.PlayConfig',
     'django.contrib.admin',
     'django.contrib.auth',

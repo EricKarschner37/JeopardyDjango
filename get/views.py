@@ -8,7 +8,7 @@ from get import get_game
 class GetView(generic.edit.FormView):
     template_name = 'get/get.html'
     form_class = GameForm
-    success_url = '/play/'
+    success_url = '/host/'
     
     def form_valid(self, form):
         game = form.save(commit=False)

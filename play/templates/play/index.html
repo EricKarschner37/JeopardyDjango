@@ -1,8 +1,127 @@
-{% block content %}
-	<h2>Games</h2>
-	<ul>
-	{% for game in games_list %}
-		<li><a href="{% url 'play' game.num %}">{{ game.name }}</a></li>
-	{% endfor %}
-	</ul>
-{% endblock %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <meta charset="UTF-8">
+    <title>Jeopardy!</title>
+</head>
+<body>
+
+<div id="buzzer_display_container"></div>
+<form id="connect_form">
+    <input id="name_input" type="text" placeholder="Name"/><br/>
+    <input type="submit" value="Connect"/>
+</form>
+
+<script type="text/javascript" src="{% static 'play/components.js' %}"></script>
+<script type="text/javascript">
+    const socket = new WebSocket("ws://" + window.location.host + "/ws/buzzer/");
+    let socketOpen = false
+    let name
+
+    socket.addEventListener('message', function(e) {
+        let json = JSON.parse(e.data)
+        console.log(json)
+        if (json.message === "state"){
+            if (json.state === "question") {
+                showQuestion(json)
+            } else if (json.state === "answer") {
+                showAnswer(json)
+            } else if (json.state === "idle") {
+                let state = {}
+                state.clue = "Waiting for question..."
+                state.cost = 0
+                showQuestion(state)
+            } else if (json.state === "buzzed" && json.player === name){
+                showBuzzed(json)
+            } else if (json.state === "daily_double" && json.player === name){
+                showDailyDouble()
+            }
+        } else if (json.message === "register success") {
+            $('#connect_form').hide()
+        }
+    })
+
+    socket.addEventListener('open', function(e) {
+        socketOpen = true
+    })
+
+
+    function buzz(){
+        let request = {}
+        request.request = 'buzz'
+        socket.send(JSON.stringify(request))
+        console.log(JSON.stringify(request))
+    }
+
+    function wager(wager){
+        let request = {}
+        request.request = 'wager'
+        request.amount = wager
+        socket.send(JSON.stringify(request))
+    }
+
+    function showQuestion(json, options={}){
+        options.question = json.clue
+        options.cost = json.cost
+
+        showBuzzerDisplay(options)
+    }
+
+    function showBuzzed(json, options={}){
+        options.buzzed = true
+
+        showQuestion(json, options)
+    }
+
+    function showAnswer(json, options = {}){
+        options.answer = json.answer
+
+        showQuestion(json, options)
+    }
+
+    function showDailyDouble(){
+        let options = {}
+        options.clue = "Daily Double!"
+        options.cost = "???"
+        options.daily_double = true
+
+        showQuestion(options, options)
+    }
+
+    function showBuzzerDisplay(options){
+        options.onWager = wager
+        options.onBuzz = buzz
+        options.name = name
+
+        ReactDOM.render(
+            React.createElement(
+                BuzzerDisplay,
+                options
+            ),
+            document.getElementById("buzzer_display_container")
+        )
+    }
+
+    $('#connect_form').on('submit', function(e) {
+        e.preventDefault()
+        name = document.getElementById("name_input").value
+        if (socketOpen && isValidName(name)){
+
+            let request = {}
+            request.request = "register"
+            request.name = name
+            socket.send(JSON.stringify(request))
+        }
+    });
+
+    function isValidName(name){
+        return name !== ""
+    }
+</script>
+</body>
+</html>

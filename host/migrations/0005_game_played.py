@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('play', '0004_game_name'),
+        ('host', '0004_game_name'),
     ]
 
     operations = [

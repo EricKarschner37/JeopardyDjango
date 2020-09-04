@@ -6,116 +6,124 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var ClueSquare = function (_React$Component) {
-  _inherits(ClueSquare, _React$Component);
+var BuzzerButton = function (_React$Component) {
+    _inherits(BuzzerButton, _React$Component);
 
-  function ClueSquare(props) {
-    _classCallCheck(this, ClueSquare);
+    function BuzzerButton(props) {
+        _classCallCheck(this, BuzzerButton);
 
-    var _this = _possibleConstructorReturn(this, (ClueSquare.__proto__ || Object.getPrototypeOf(ClueSquare)).call(this, props));
+        var _this = _possibleConstructorReturn(this, (BuzzerButton.__proto__ || Object.getPrototypeOf(BuzzerButton)).call(this, props));
 
-    _this.state = { hasBeenClicked: false };
-    _this.handleClick = _this.handleClick.bind(_this);
-    return _this;
-  }
-
-  _createClass(ClueSquare, [{
-    key: "handleClick",
-    value: function handleClick(e) {
-      if (!this.state.hasBeenClicked) {
-        this.setState({ 'hasBeenClicked': true });
-        this.props.onClueSquareClick(this.props.row, this.props.col);
-      }
+        _this.handleClick = _this.handleClick.bind(_this);
+        return _this;
     }
-  }, {
-    key: "render",
-    value: function render() {
-      return React.createElement(
-        "td",
-        { className: "clue", onClick: this.handleClick },
-        !this.state.hasBeenClicked && React.createElement(
-          "p",
-          { className: "cost" },
-          this.props.cost
-        )
-      );
-    }
-  }]);
 
-  return ClueSquare;
+    _createClass(BuzzerButton, [{
+        key: "handleClick",
+        value: function handleClick(e) {
+            e.preventDefault();
+            this.props.onBuzz();
+        }
+    }, {
+        key: "render",
+        value: function render() {
+            return React.createElement(
+                "button",
+                { className: "buzzer", onClick: this.handleClick },
+                "BUZZ"
+            );
+        }
+    }]);
+
+    return BuzzerButton;
 }(React.Component);
 
-var ClueBoard = function (_React$Component2) {
-  _inherits(ClueBoard, _React$Component2);
+var ClueDisplay = function (_React$Component2) {
+    _inherits(ClueDisplay, _React$Component2);
 
-  function ClueBoard(props) {
-    _classCallCheck(this, ClueBoard);
+    function ClueDisplay(props) {
+        _classCallCheck(this, ClueDisplay);
 
-    var _this2 = _possibleConstructorReturn(this, (ClueBoard.__proto__ || Object.getPrototypeOf(ClueBoard)).call(this, props));
-
-    _this2.getCostForRow = _this2.getCostForRow.bind(_this2);
-    return _this2;
-  }
-
-  _createClass(ClueBoard, [{
-    key: "handleClueSquareClick",
-    value: function handleClueSquareClick(row, col) {
-      revealClue(row, col);
-      console.log("Clicked: " + row + " " + col);
+        return _possibleConstructorReturn(this, (ClueDisplay.__proto__ || Object.getPrototypeOf(ClueDisplay)).call(this, props));
     }
-  }, {
-    key: "getCostForRow",
-    value: function getCostForRow(row) {
-      return (row + 1) * 200;
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      var categorySquares = [];
-      this.props.categories.map(function (category, key) {
-        console.log(category + ": " + key);
-        categorySquares.push(React.createElement(
-          "th",
-          { key: key, className: "category" },
-          React.createElement(
-            "p",
-            null,
-            category
-          )
-        ));
-      });
-      console.log(this.props.categories);
-      console.log(categorySquares);
 
-      var clueRows = [];
-      for (var i = 0; i < 5; i++) {
-        var clues = [];
-        for (var j = 0; j < 6; j++) {
-          clues.push(React.createElement(ClueSquare, { cost: this.getCostForRow(i), onClueSquareClick: this.handleClueSquareClick, row: i, col: j, hasBeenClicked: false }));
+    _createClass(ClueDisplay, [{
+        key: "render",
+        value: function render() {
+            return React.createElement(
+                "div",
+                null,
+                React.createElement(
+                    "p",
+                    { className: "cost" },
+                    this.props.cost
+                ),
+                React.createElement(
+                    "p",
+                    { className: "clue" },
+                    this.props.clue
+                ),
+                React.createElement(
+                    "p",
+                    { className: "answer" },
+                    this.props.answer
+                )
+            );
         }
-        clueRows.push(React.createElement(
-          "tr",
-          null,
-          clues
-        ));
-      }
+    }]);
 
-      return React.createElement(
-        "table",
-        { id: "clue_table" },
-        React.createElement(
-          "tbody",
-          null,
-          React.createElement(
-            "tr",
-            null,
-            categorySquares
-          ),
-          clueRows
-        )
-      );
+    return ClueDisplay;
+}(React.Component);
+
+var UserInformation = function (_React$Component3) {
+    _inherits(UserInformation, _React$Component3);
+
+    function UserInformation(props) {
+        _classCallCheck(this, UserInformation);
+
+        return _possibleConstructorReturn(this, (UserInformation.__proto__ || Object.getPrototypeOf(UserInformation)).call(this, props));
     }
-  }]);
 
-  return ClueBoard;
+    _createClass(UserInformation, [{
+        key: "render",
+        value: function render() {
+            return React.createElement(
+                "p",
+                { className: "name" },
+                this.props.name
+            );
+        }
+    }]);
+
+    return UserInformation;
+}(React.Component);
+
+var BuzzerDisplay = function (_React$Component4) {
+    _inherits(BuzzerDisplay, _React$Component4);
+
+    function BuzzerDisplay(props) {
+        _classCallCheck(this, BuzzerDisplay);
+
+        return _possibleConstructorReturn(this, (BuzzerDisplay.__proto__ || Object.getPrototypeOf(BuzzerDisplay)).call(this, props));
+    }
+
+    _createClass(BuzzerDisplay, [{
+        key: "render",
+        value: function render() {
+            return React.createElement(
+                "div",
+                null,
+                React.createElement(UserInformation, { name: this.props.name }),
+                React.createElement(ClueDisplay, { clue: this.props.question, answer: this.props.answer, cost: this.props.cost }),
+                this.props.buzzed && React.createElement(
+                    "p",
+                    null,
+                    "You are buzzed in"
+                ),
+                React.createElement(BuzzerButton, { onBuzz: this.props.onBuzz })
+            );
+        }
+    }]);
+
+    return BuzzerDisplay;
 }(React.Component);
