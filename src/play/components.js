@@ -20,25 +20,31 @@ class BuzzerButton extends React.Component {
 class WagerDisplay extends React.Component {
     constructor(props) {
         super(props);
-
-        this.handleSubmit = this.handleSubmit.bind(this)
+        this.state = {wagerString: ''}
     }
 
     isValidWager(wager){
-        return !isNaN(wager) && parseInt(num) >= 5
+        return !isNaN(wager) && parseInt(wager) >= 5
     }
 
-    handleSubmit(e) {
+    handleSubmit = (e) => {
         e.preventDefault();
-        let wager = $("#wager_input").value
-        if (this.isValidWager(wager))
-        this.props.onWager(parseInt(wager))
+        console.log(this.isValidWager(this.state.wagerString))
+        if (this.isValidWager(this.state.wagerString)){
+            this.props.onWager(parseInt(this.state.wagerString))
+        }
+    }
+
+    handleChange = (e) => {
+        this.setState({
+            wagerString: e.target.value
+        })
     }
 
     render() {
         return (
             <form onSubmit={this.handleSubmit}>
-                <input type="text" placeholder="Wager" id="wager_input" />
+                <input type="text" onChange={this.handleChange} placeholder="Wager" id="wager_input" /><br/>
                 <input type="submit" value="Wager" />
             </form>
         )

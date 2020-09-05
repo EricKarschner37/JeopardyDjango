@@ -19,7 +19,7 @@
 
 <script type="text/javascript" src="{% static 'play/components.js' %}"></script>
 <script type="text/javascript">
-    const socket = new WebSocket("ws://" + window.location.host + "/ws/buzzer/");
+    const socket = new WebSocket("wss://" + "jeopardy.karschner.studio"/*window.location.host*/ + "/ws/buzzer/");
     let socketOpen = false
     let name
 
@@ -63,6 +63,7 @@
         request.request = 'wager'
         request.amount = wager
         socket.send(JSON.stringify(request))
+        console.log(JSON.stringify(request))
     }
 
     function showQuestion(json, options={}){

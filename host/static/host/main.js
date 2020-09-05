@@ -1,4 +1,4 @@
-const socket = new WebSocket("ws://" + window.location.host + "/ws/buzzer/server/");
+const socket = new WebSocket("wss://" + window.location.host + "/ws/buzzer/server/");
 
 $(document).ready(function(){
     $("div#clue_div").css("height", $("table#clue_table").css("height"));

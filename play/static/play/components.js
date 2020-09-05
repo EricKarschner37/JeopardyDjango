@@ -38,8 +38,55 @@ var BuzzerButton = function (_React$Component) {
     return BuzzerButton;
 }(React.Component);
 
-var ClueDisplay = function (_React$Component2) {
-    _inherits(ClueDisplay, _React$Component2);
+var WagerDisplay = function (_React$Component2) {
+    _inherits(WagerDisplay, _React$Component2);
+
+    function WagerDisplay(props) {
+        _classCallCheck(this, WagerDisplay);
+
+        var _this2 = _possibleConstructorReturn(this, (WagerDisplay.__proto__ || Object.getPrototypeOf(WagerDisplay)).call(this, props));
+
+        _this2.handleSubmit = function (e) {
+            e.preventDefault();
+            console.log(_this2.isValidWager(_this2.state.wagerString));
+            if (_this2.isValidWager(_this2.state.wagerString)) {
+                _this2.props.onWager(parseInt(_this2.state.wagerString));
+            }
+        };
+
+        _this2.handleChange = function (e) {
+            _this2.setState({
+                wagerString: e.target.value
+            });
+        };
+
+        _this2.state = { wagerString: '' };
+        return _this2;
+    }
+
+    _createClass(WagerDisplay, [{
+        key: "isValidWager",
+        value: function isValidWager(wager) {
+            return !isNaN(wager) && parseInt(wager) >= 5;
+        }
+    }, {
+        key: "render",
+        value: function render() {
+            return React.createElement(
+                "form",
+                { onSubmit: this.handleSubmit },
+                React.createElement("input", { type: "text", onChange: this.handleChange, placeholder: "Wager", id: "wager_input" }),
+                React.createElement("br", null),
+                React.createElement("input", { type: "submit", value: "Wager" })
+            );
+        }
+    }]);
+
+    return WagerDisplay;
+}(React.Component);
+
+var ClueDisplay = function (_React$Component3) {
+    _inherits(ClueDisplay, _React$Component3);
 
     function ClueDisplay(props) {
         _classCallCheck(this, ClueDisplay);
@@ -75,8 +122,8 @@ var ClueDisplay = function (_React$Component2) {
     return ClueDisplay;
 }(React.Component);
 
-var UserInformation = function (_React$Component3) {
-    _inherits(UserInformation, _React$Component3);
+var UserInformation = function (_React$Component4) {
+    _inherits(UserInformation, _React$Component4);
 
     function UserInformation(props) {
         _classCallCheck(this, UserInformation);
@@ -98,8 +145,8 @@ var UserInformation = function (_React$Component3) {
     return UserInformation;
 }(React.Component);
 
-var BuzzerDisplay = function (_React$Component4) {
-    _inherits(BuzzerDisplay, _React$Component4);
+var BuzzerDisplay = function (_React$Component5) {
+    _inherits(BuzzerDisplay, _React$Component5);
 
     function BuzzerDisplay(props) {
         _classCallCheck(this, BuzzerDisplay);
@@ -120,7 +167,8 @@ var BuzzerDisplay = function (_React$Component4) {
                     null,
                     "You are buzzed in"
                 ),
-                React.createElement(BuzzerButton, { onBuzz: this.props.onBuzz })
+                this.props.daily_double && React.createElement(WagerDisplay, { onWager: this.props.onWager }),
+                !this.props.daily_double && React.createElement(BuzzerButton, { onBuzz: this.props.onBuzz })
             );
         }
     }]);
