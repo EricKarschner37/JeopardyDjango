@@ -1,3 +1,7 @@
+# NOTE:
+
+This repo is now _deprecated_. Please see [this repo](https://github.com/EricKasrchner37/Jeopardy) instead.
+
 # Jeopardy
 
 A self-hosted open source Jeopardy! game. This project uses the [Jeopardy! Buzzer App](https://github.com/EricKarschner37/JeopardyApp) to manage players.
